@@ -6,7 +6,7 @@ Created on 20 mars 2018
 
 import subprocess
 from shutil import copy2
-from pyCloudy.utils.misc import fill_from_file, write_cols
+from .utils import fill_from_file, write_cols
 
 fort1_str = """MODEL DESIGNATION:                                           [NAME]
 {0[NAME]}
