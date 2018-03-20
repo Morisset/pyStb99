@@ -132,24 +132,30 @@ class pyStb99(object):
         
         self.fort1_str = fort1_str
         self.fort1_dic = fort1_dic
-        self.def_value('NAME', name)
+        self.set_value('NAME', name)
+        self.stb_dir = '/Users/christophemorisset/TOOLS/Starburst99/Stb99_V7.0.1'
     
-    def def_value(self, key, value):
+    def set_value(self, key, value):
         
         if key in self.fort1_dic:
             self.fort1_dic[key] = value
             
     def print_fort1(self):
         
-        with open('fort.1', 'w') as f:
+        with open('{}/fort.1'.format(self.stb_dir), 'w') as f:
             f.write(self.fort1_str.format(self.fort1_dic))
+
+    def run_stb99(self):
+        to_run = 'cd {}; ./galaxy'.format(self.stb_dir)
+        print('RUNNING {}'.format(to_run))
+        stdin = None
+        stdout = subprocess.PIPE
+        proc = subprocess.Popen(to_run, shell=True, stdout=stdout, stdin=stdin)
+        proc.communicate()
 
     def stb99_cloudy(self):
         
-        try:
-            copy2('fort.92', '{}.stb99'.format(self.fort1_dic['NAME']))
-        except:
-            raise NameError('Error copy')
+        copy2('{}/fort.92'.format(self.stb_dir), '{}.stb99'.format(self.fort1_dic['NAME']))
         try:
             to_run = "echo 'compile star \"{}.stb99\"' | cloudy.exe".format(self.fort1_dic['NAME'])
             print('RUNNING {}'.format(to_run))
@@ -161,53 +167,52 @@ class pyStb99(object):
             raise NameError('Problem in generating cloudy .stb99 file')
     
 def merge_files(files, tab_metals, outfile):
-    
-    #reading the ages and lambdas tables from the 1rst ascii file
-    f1 = file('{0}.ascii'.format(files[0]))
-    for i in range(4):
-        foo = f1.readline()
-    # numer of ages in the ascii files
-    n_ages = int(f1.readline())
-    # number of lambdas
-    n_lam = int(f1.readline())
-    for i in range(4):
-        foo = f1.readline()
-    tab_ages = fill_from_file(n_ages, f1)
-    tab_lambdas = fill_from_file(n_lam, f1)
-    f1.close()
-    
-    
+    """
+    Be sure that files and tab_metals are coherent
+    """
     n_metal = len(tab_metals)
-    fout = file(outfile, 'w')
-    fout.write('  20060612\n')
-    fout.write('  2\n')
-    fout.write('  2\n')
-    fout.write('  Age\n')
-    fout.write('  Metal\n')
-    fout.write('  {0}\n'.format(n_ages*n_metal))
-    fout.write('  {0}\n'.format(n_lam))
-    fout.write('  lambda\n')
-    fout.write('  1.00000000e+00\n')
-    fout.write('  F_lambda\n')
-    fout.write('  1.00000000e+00\n')
-    
-    #writing the ages and metallicities
-    for metal in tab_metals:
-        for age in tab_ages:
-            fout.write('{0} {1}\n'.format(age, metal))
-    #writing the lambdas
-    write_cols(tab_lambdas, 5, fout)
-    for fil in files:
-        f1 = file('{0}.ascii'.format(fil))
-        for i in range(10):
+    #reading the ages and lambdas tables from the 1rst ascii file
+    with open('{0}.ascii'.format(files[0])) as f1:
+        for i in range(4):
+            foo = f1.readline()
+        # numer of ages in the ascii files
+        n_ages = int(f1.readline())
+        # number of lambdas
+        n_lam = int(f1.readline())
+        for i in range(4):
             foo = f1.readline()
         tab_ages = fill_from_file(n_ages, f1)
         tab_lambdas = fill_from_file(n_lam, f1)
-        #reading and writing the fluxes from the different files
-        tab_flux = fill_from_file(n_lam * n_ages, f1)
-        write_cols(tab_flux, 5, fout)
     
-    fout.close()
+    with open(outfile, 'w') as fout:
+        fout.write('  20060612\n')
+        fout.write('  2\n')
+        fout.write('  2\n')
+        fout.write('  Age\n')
+        fout.write('  Metal\n')
+        fout.write('  {0}\n'.format(n_ages*n_metal))
+        fout.write('  {0}\n'.format(n_lam))
+        fout.write('  lambda\n')
+        fout.write('  1.00000000e+00\n')
+        fout.write('  F_lambda\n')
+        fout.write('  1.00000000e+00\n')
+        
+        #writing the ages and metallicities
+        for metal in tab_metals:
+            for age in tab_ages:
+                fout.write('{0} {1}\n'.format(age, metal))
+        #writing the lambdas
+        write_cols(tab_lambdas, 5, fout)
+        for fil in files:
+            f1 = open('{0}.ascii'.format(fil))
+            for i in range(10):
+                foo = f1.readline()
+            tab_ages = fill_from_file(n_ages, f1)
+            tab_lambdas = fill_from_file(n_lam, f1)
+            #reading and writing the fluxes from the different files
+            tab_flux = fill_from_file(n_lam * n_ages, f1)
+            write_cols(tab_flux, 5, fout)
+    
 
 if __name__ == '__main__':
     pass
