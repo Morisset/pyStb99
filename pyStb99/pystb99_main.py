@@ -11,8 +11,7 @@ from shutil import copy2
 from pyCloudy.utils.misc import fill_from_file, write_cols
 
 
-fort1_str = """
-MODEL DESIGNATION:                                           [NAME]
+fort1_str = """MODEL DESIGNATION:                                           [NAME]
 {0[NAME]}
 CONTINUOUS STAR FORMATION (>0) OR FIXED MASS (<=0):          [ISF]
 {0[ISF]}
@@ -161,11 +160,25 @@ class pyStb99(object):
         except:
             raise NameError('Problem in generating cloudy .stb99 file')
     
-def merge_files(files, tab_ages, tab_metals, tab_lambdas):
-    n_ages = len(tab_ages)
+def merge_files(files, tab_metals, outfile):
+    
+    #reading the ages and lambdas tables from the 1rst ascii file
+    f1 = file('{0}.ascii'.format(files[0]))
+    for i in range(4):
+        foo = f1.readline()
+    # numer of ages in the ascii files
+    n_ages = int(f1.readline())
+    # number of lambdas
+    n_lam = int(f1.readline())
+    for i in range(4):
+        foo = f1.readline()
+    tab_ages = fill_from_file(n_ages, f1)
+    tab_lambdas = fill_from_file(n_lam, f1)
+    f1.close()
+    
+    
     n_metal = len(tab_metals)
-    n_lam = len(tab_lambdas)
-    fout = file('FMlj_all.ascii', 'w')
+    fout = file(outfile, 'w')
     fout.write('  20060612\n')
     fout.write('  2\n')
     fout.write('  2\n')
@@ -195,9 +208,6 @@ def merge_files(files, tab_ages, tab_metals, tab_lambdas):
         write_cols(tab_flux, 5, fout)
     
     fout.close()
-
-
-
 
 if __name__ == '__main__':
     pass
