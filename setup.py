@@ -16,7 +16,7 @@ Operating System :: Unix
 NAME = "pystb99"
 MAJOR = 1
 MINOR = 1
-MICRO = 3
+MICRO = 4
 ISRELEASED = False
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 REVISION = 0 + int(os.popen("git rev-list --all | wc -l").read())

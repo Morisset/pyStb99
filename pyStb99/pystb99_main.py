@@ -6,6 +6,7 @@ Created on 20 mars 2018
 
 import subprocess
 from shutil import copy2
+import os
 from .utils import fill_from_file, write_cols
 
 fort1_str = """MODEL DESIGNATION:                                           [NAME]
@@ -19,9 +20,9 @@ SFR [SOLAR MASSES PER YEAR] IF 'CONT. SF' IS CHOSEN:         [SFR]
 NUMBER OF INTERVALS FOR THE IMF (KROUPA=2):                  [NINTERV]
 {0[NINTERV]}
 IMF EXPONENTS (KROUPA=1.3,2.3):                              [XPONENT]
-{0[XPONENT][0]},{0[XPONENT][1]}
+{1}
 MASS BOUNDARIES FOR IMF (KROUPA=0.1,0.5,100) [SOLAR MASSES]: [XMASLIM]
-{0[XMASLIM][0]},{0[XMASLIM][1]},{0[XMASLIM][2]}
+{2}
 SUPERNOVA CUT-OFF MASS [SOLAR MASSES]:                       [SNCUT]
 {0[SNCUT]}
 BLACK HOLE CUT-OFF MASS [SOLAR MASSES]:                      [BHCUT]
@@ -136,11 +137,16 @@ class pyStb99(object):
         
         if key in self.fort1_dic:
             self.fort1_dic[key] = value
+        else:
+            print('{} is not a valid key'.format(key))
             
     def print_fort1(self):
         
         with open('{}/fort.1'.format(self.stb_dir), 'w') as f:
-            f.write(self.fort1_str.format(self.fort1_dic))
+            f.write(self.fort1_str.format(self.fort1_dic, 
+                                          ','.join([str(aa) for aa in self.fort1_dic['XPONENT']]),
+                                          ','.join([str(aa) for aa in self.fort1_dic['XMASLIM']])))
+            print('WRITING fort.1'.format())
 
     def run_stb99(self):
         to_run = 'cd {}; ./galaxy'.format(self.stb_dir)
@@ -151,17 +157,42 @@ class pyStb99(object):
         proc.communicate()
 
     def stb99_cloudy(self):
-        
-        copy2('{}/fort.92'.format(self.stb_dir), '{}.stb99'.format(self.fort1_dic['NAME']))
+        name = self.fort1_dic['NAME']
+        copy2('{}/fort.1'.format(self.stb_dir), '{}.input'.format(name))
+        copy2('{}/fort.92'.format(self.stb_dir), '{}.stb99'.format(name))
+        if os.path.exists('{}.ascii'.format(name)):
+            os.remove('{}.ascii'.format(name))
+        if os.path.exists('{}.mod'.format(name)):
+            os.remove('{}.mod'.format(name))
         try:
-            to_run = "echo 'compile star \"{}.stb99\"' | cloudy.exe".format(self.fort1_dic['NAME'])
+            to_run = "echo 'compile star \"{}.stb99\"' | cloudy.exe".format(name)
             print('RUNNING {}'.format(to_run))
             stdin = None
             stdout = subprocess.PIPE
             proc = subprocess.Popen(to_run, shell=True, stdout=stdout, stdin=stdin)
             proc.communicate()
+            print(stdout)
         except:
             raise NameError('Problem in generating cloudy .stb99 file')
+    
+    def generate_cloudy(self):
+        self.print_fort1()
+        self.run_stb99()
+        self.stb99_cloudy()
+    
+    def read_ascii(self):
+        with open('{0}.ascii'.format(self.fort1_dic['NAME'])) as f1:
+            for i in range(4):
+                foo = f1.readline()
+            # numer of ages in the ascii files
+            self.n_ages = int(f1.readline())
+            # number of lambdas
+            self.n_lam = int(f1.readline())
+            for i in range(4):
+                foo = f1.readline()
+            self.tab_ages = fill_from_file(self.n_ages, f1)
+            self.tab_lambdas = fill_from_file(self.n_lam, f1)
+        
     
 def merge_files(files, tab_metals, outfile):
     """
@@ -209,7 +240,6 @@ def merge_files(files, tab_metals, outfile):
             #reading and writing the fluxes from the different files
             tab_flux = fill_from_file(n_lam * n_ages, f1)
             write_cols(tab_flux, 5, fout)
-    
 
 if __name__ == '__main__':
     pass
