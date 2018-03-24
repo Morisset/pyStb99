@@ -108,19 +108,19 @@ fort1_dic = {'NAME': 'test1',
              'IVT': 3,
              'IRSG': 0,
              'IO1': 1,
-             'IO2': 1,
-             'IO3': 1,
-             'IO4': 1,
-             'IO5': 1,
-             'IO6': 1,
+             'IO2': -1,
+             'IO3': -1,
+             'IO4': -1,
+             'IO5': -1,
+             'IO6': -1,
              'IO7': 1,
-             'IO8': 1,
-             'IO9': 1,
+             'IO8': -1,
+             'IO9': -1,
              'IO10': 1,
-             'IO11': 1,
+             'IO11': -1,
              'IO12': -1,
              'IO13': -1,
-             'IO14': 1,
+             'IO14': -1,
              'IO15': -1,
              }
 
@@ -144,8 +144,8 @@ class pyStb99(object):
         
         with open('{}/fort.1'.format(self.stb_dir), 'w') as f:
             f.write(self.fort1_str.format(self.fort1_dic, 
-                                          ','.join([str(aa) for aa in self.fort1_dic['XPONENT']]),
-                                          ','.join([str(aa) for aa in self.fort1_dic['XMASLIM']])))
+                                          ','.join(['{:.1f}'.format(aa) for aa in self.fort1_dic['XPONENT']]),
+                                          ','.join(['{:.1f}'.format(aa) for aa in self.fort1_dic['XMASLIM']])))
             print('WRITING fort.1'.format())
 
     def run_stb99(self):
@@ -165,7 +165,7 @@ class pyStb99(object):
         if os.path.exists('{}.mod'.format(name)):
             os.remove('{}.mod'.format(name))
         try:
-            to_run = "echo 'compile star \"{}.stb99\"' | cloudy.exe".format(name)
+            to_run = "echo 'compile star \"{}.stb99\"' | /usr/local/Cloudy/c13.03/source/cloudy.exe".format(name)
             print('RUNNING {}'.format(to_run))
             stdin = None
             stdout = subprocess.PIPE
